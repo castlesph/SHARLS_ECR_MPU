@@ -1,0 +1,36 @@
+
+#ifndef __BLUETOOTH___
+#define __BLUETOOTH___
+
+#define d_BLUETOOTH_STATE_CONNECTED		  0x00000002
+#define d_BLUETOOTH_STATE_LISTENING		  0x00000004
+#define d_BLUETOOTH_STATE_SCANNING   0x00000008
+#define d_BLUETOOTH_STATE_CONNECTING	0x00000010
+#define d_BLUETOOTH_STATE_SENDING   0x00000040
+#define d_BLUETOOTH_STATE_RECEIVING	0x00000080
+#define d_BLUETOOTH_STATE_DISCONNECTING  0x00000100
+
+
+typedef enum
+{
+	d_IPC_CMD_BT_OPEN		= 0x01,
+    d_IPC_CMD_BT_LISTEN		= 0x02,
+    d_IPC_CMD_BT_STATUS	    = 0x03,
+    d_IPC_CMD_BT_RXREADY	= 0x04,
+    d_IPC_CMD_BT_RXDATA		= 0x05,
+    d_IPC_CMD_BT_TXDATA		= 0x06,
+
+}IPC_BTCMD_TYPES;
+
+
+USHORT CTOSS_BluetoothTxData(BYTE* baData, USHORT usLen);
+USHORT CTOSS_BluetoothRxReady(USHORT* pusLen);
+USHORT CTOSS_BluetoothRxData(BYTE* baData, USHORT* pusLen);
+USHORT CTOSS_BluetoothOpen(void);
+USHORT CTOSS_BluetoothListen(BYTE* baServiceName, BYTE* baUUID);
+USHORT CTOSS_BluetoothStatus(DWORD* pdwState);
+int inCTOSS_BluetoothStatus(void);
+
+
+#endif
+

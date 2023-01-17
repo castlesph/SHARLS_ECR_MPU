@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SHALRS_ECR</string>
+
+    <string name="hello_world">Hello world!</string>
+
+    <string name="edithint">请输入要写入的内容~</string>
+    <string name="btnwrite">写入</string>
+    <string name="btnclean">清空</string>
+    <string name="nametitle">请输入文件名</string>
+    <string name="detailtitle">请输入文件内容</string>
+    <string name="btnread">读取文件内容</string>
+    <string name="action_settings">Settings</string>
+</resources>
