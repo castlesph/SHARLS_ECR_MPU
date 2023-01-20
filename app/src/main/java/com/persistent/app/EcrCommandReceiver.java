@@ -8,9 +8,8 @@ import android.util.Log;
 public class EcrCommandReceiver extends BroadcastReceiver {
     private static final String TAG = "EcrCommandReceiver";
     private static boolean isSetInstance = false;
-
     static {
-        System.loadLibrary("native-lib");
+        System.loadLibrary("crypto");
     }
 
     static {
@@ -18,8 +17,12 @@ public class EcrCommandReceiver extends BroadcastReceiver {
     }
 
     static {
-        System.loadLibrary("crypto");
+        System.loadLibrary("native-lib");
     }
+
+
+
+
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.i(TAG, "onReceive: to send ecr resp");
