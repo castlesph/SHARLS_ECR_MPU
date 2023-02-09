@@ -2351,6 +2351,8 @@ int inECRSendResponse(void)
 	char szUPISettleData1[54];
 	char szMPUPISettleData1[54];
 	char szJCBSettleData1[54];
+	char szMMKSettleData1[54];
+	char szUSDSettleData1[54];
 
 	int inCBBSettled=0, inMPUSettled=0, inUPISettled=0, inMPUPISettled=0, inJCBSettled=0;
 	cJSON * pJsonCBB = NULL;
@@ -2358,6 +2360,8 @@ int inECRSendResponse(void)
 	cJSON * pJsonUPI = NULL;
 	cJSON * pJsonMPUPI = NULL;
 	cJSON * pJsonJCB = NULL;
+	cJSON * pJsonMMK = NULL;
+	cJSON * pJsonUSD = NULL;
 
 	char sztempdata1 [8+1];
 	char szTempdata2 [3+1];
@@ -2593,7 +2597,7 @@ int inECRSendResponse(void)
 		else
 		{  
 #if 1
-			int inCBBSettled=0, inMPUSettled=0, inUPISettled=0, inMPUPISettled=0, inJCBSettled=0;
+			int inCBBSettled=0, inMPUSettled=0, inUPISettled=0, inMPUPISettled=0, inJCBSettled=0, inFinUsdSettled=0, inFinMMKSettled = 0;
 
             inCBBSettled=get_env_int("CBB_SETTLED");
 			//inCBBSettled=1;
@@ -2669,7 +2673,7 @@ int inECRSendResponse(void)
 				cJSON_AddStringToObject(pJsonCBB, "VOIDAMT", voidamt);				
 				cJSON_AddNumberToObject(pJsonCBB, "REFUNDCNT", refundcnt);
 				cJSON_AddStringToObject(pJsonCBB, "REFUNDAMT", refundamt);
-
+                vdDebug_LogPrintf("salecnt =[%d]，saleamt=[%s],voidcnt[%d],voidamt=%s ",salecnt, saleamt, voidcnt, voidamt);
 				cJSON_AddItemToObject(pJsonRoot, "CBB", pJsonCBB);
 
 				put_env("S_CBB", " ", 1);
@@ -2952,7 +2956,132 @@ int inECRSendResponse(void)
 
 				put_env("S_JCB", " ", 1);
             }
-			
+
+			inFinMMKSettled=get_env_int("MMK_SETTLED");
+			vdDebug_LogPrintf("inFinMMKSettled =[%d]",inFinMMKSettled);
+			if(inFinMMKSettled == 1)
+			{
+				put_env_int("MMK_SETTLED", 0);
+				memset(szMMKSettleData1, 0x00, sizeof(szMMKSettleData1));
+				get_env("S_MMK", szMMKSettleData1, 54);
+				vdDebug_LogPrintf("szMMKSettleData1[%s]", szMMKSettleData1);
+				//vdDebug_PrintOnPaper("[%s]", szJCBSettleData1);
+
+				memset(sztempdata1, 0x00, sizeof(sztempdata1));
+				memcpy(sztempdata1, &szMMKSettleData1[45], 8);		//status
+				//vdDebug_PrintOnPaper("[%s]", sztempdata1);
+
+				memset(szTempdata2, 0x00, sizeof(szTempdata2));
+				memcpy(szTempdata2, &szMMKSettleData1[0], 3);		//total sale count
+
+				salecnt = atoi(szTempdata2);
+				//vdDebug_PrintOnPaper("[%d]", salecnt);
+				vdDebug_LogPrintf("szTempdata2[%s],salecnt=%d", szTempdata2, salecnt);
+				memset(szTempdata3, 0x00, sizeof(szTempdata3));
+				memcpy(szTempdata3, &szMMKSettleData1[3], 12);	//total sale amount
+				memset(saleamt, 0x00, sizeof(saleamt));
+				sprintf(saleamt, "%d", atoi(szTempdata3));
+				//vdDebug_PrintOnPaper("[%s]", saleamt);
+				vdDebug_LogPrintf("szTempdata3[%s],[%d], saleamt=%s", szTempdata3, atoi(szTempdata3), saleamt);
+
+				memset(szTempdata2, 0x00, sizeof(szTempdata2));
+				memcpy(szTempdata2, &szMMKSettleData1[15], 3);		//total void count
+				voidcnt = atoi(szTempdata2);
+				//vdDebug_PrintOnPaper("[%d]", voidcnt);
+
+				memset(szTempdata3, 0x00, sizeof(szTempdata3));
+				memcpy(szTempdata3, &szMMKSettleData1[18], 12);		//total void amount
+				memset(voidamt, 0x00, sizeof(voidamt));
+				sprintf(voidamt, "%d", atoi(szTempdata3));
+				//vdDebug_PrintOnPaper("[%s]", voidamt);
+
+				memset(szTempdata2, 0x00, sizeof(szTempdata2));
+				memcpy(szTempdata2, &szMMKSettleData1[30], 3);		//total refund count
+				refundcnt = atoi(szTempdata2);
+				//vdDebug_PrintOnPaper("[%d]", refundcnt);
+
+				memset(szTempdata3, 0x00, sizeof(szTempdata3));
+				memcpy(szTempdata3, &szMMKSettleData1[33], 12);		//total refund amount
+				//vdDebug_PrintOnPaper("[%s]", szTempdata3);
+				memset(refundamt, 0x00, sizeof(refundamt));
+				sprintf(refundamt, "%d", atoi(szTempdata3));
+				//vdDebug_PrintOnPaper("[%s]", refundamt);
+
+				pJsonMMK = NULL;
+				pJsonMMK = cJSON_CreateObject();
+				cJSON_AddStringToObject(pJsonMMK, "STATUS", sztempdata1);
+				cJSON_AddNumberToObject(pJsonMMK, "SALECNT", salecnt);
+				cJSON_AddStringToObject(pJsonMMK, "SALEAMT", saleamt);
+				cJSON_AddNumberToObject(pJsonMMK, "VOIDCNT", voidcnt);
+				cJSON_AddStringToObject(pJsonMMK, "VOIDAMT", voidamt);
+				cJSON_AddNumberToObject(pJsonMMK, "REFUNDCNT", refundcnt);
+				cJSON_AddStringToObject(pJsonMMK, "REFUNDAMT", refundamt);
+
+				cJSON_AddItemToObject(pJsonRoot, "MMK", pJsonMMK);
+
+				put_env("S_MMK", " ", 1);
+			}
+			inFinUsdSettled=get_env_int("USD_SETTLED");
+			if(inFinUsdSettled == 1)
+			{
+				put_env_int("USD_SETTLED", 0);
+				memset(szUSDSettleData1, 0x00, sizeof(szUSDSettleData1));
+				get_env("S_USD", szUSDSettleData1, 54);
+				//vdDebug_PrintOnPaper("[%s]", szUSDSettleData1);
+
+				memset(sztempdata1, 0x00, sizeof(sztempdata1));
+				memcpy(sztempdata1, &szUSDSettleData1[45], 8);		//status
+				//vdDebug_PrintOnPaper("[%s]", sztempdata1);
+
+				memset(szTempdata2, 0x00, sizeof(szTempdata2));
+				memcpy(szTempdata2, &szUSDSettleData1[0], 3);		//total sale count
+
+				salecnt = atoi(szTempdata2);
+				//vdDebug_PrintOnPaper("[%d]", salecnt);
+
+				memset(szTempdata3, 0x00, sizeof(szTempdata3));
+				memcpy(szTempdata3, &szUSDSettleData1[3], 12);	//total sale amount
+				memset(saleamt, 0x00, sizeof(saleamt));
+				sprintf(saleamt, "%d", atoi(szTempdata3));
+				//vdDebug_PrintOnPaper("[%s]", saleamt);
+
+				memset(szTempdata2, 0x00, sizeof(szTempdata2));
+				memcpy(szTempdata2, &szUSDSettleData1[15], 3);		//total void count
+				voidcnt = atoi(szTempdata2);
+				//vdDebug_PrintOnPaper("[%d]", voidcnt);
+
+				memset(szTempdata3, 0x00, sizeof(szTempdata3));
+				memcpy(szTempdata3, &szUSDSettleData1[18], 12);		//total void amount
+				memset(voidamt, 0x00, sizeof(voidamt));
+				sprintf(voidamt, "%d", atoi(szTempdata3));
+				//vdDebug_PrintOnPaper("[%s]", voidamt);
+
+				memset(szTempdata2, 0x00, sizeof(szTempdata2));
+				memcpy(szTempdata2, &szUSDSettleData1[30], 3);		//total refund count
+				refundcnt = atoi(szTempdata2);
+				//vdDebug_PrintOnPaper("[%d]", refundcnt);
+
+				memset(szTempdata3, 0x00, sizeof(szTempdata3));
+				memcpy(szTempdata3, &szUSDSettleData1[33], 12);		//total refund amount
+				//vdDebug_PrintOnPaper("[%s]", szTempdata3);
+				memset(refundamt, 0x00, sizeof(refundamt));
+				sprintf(refundamt, "%d", atoi(szTempdata3));
+				//vdDebug_PrintOnPaper("[%s]", refundamt);
+
+				pJsonUSD = NULL;
+				pJsonUSD = cJSON_CreateObject();
+				cJSON_AddStringToObject(pJsonUSD, "STATUS", sztempdata1);
+				cJSON_AddNumberToObject(pJsonUSD, "SALECNT", salecnt);
+				cJSON_AddStringToObject(pJsonUSD, "SALEAMT", saleamt);
+				cJSON_AddNumberToObject(pJsonUSD, "VOIDCNT", voidcnt);
+				cJSON_AddStringToObject(pJsonUSD, "VOIDAMT", voidamt);
+				cJSON_AddNumberToObject(pJsonUSD, "REFUNDCNT", refundcnt);
+				cJSON_AddStringToObject(pJsonUSD, "REFUNDAMT", refundamt);
+
+				cJSON_AddItemToObject(pJsonRoot, "USD", pJsonUSD);
+
+				put_env("S_USD", " ", 1);
+			}
 #else
 			cJSON_AddNumberToObject(pJsonRoot, "SALECNT", inSaleCnt);
 			if (srTransRec.usTrack1Len == 0)
